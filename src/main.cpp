@@ -39,7 +39,6 @@ const char *myWriteAPIKey = SECRET_WRITE_APIKEY;
 
 volatile bool bEventOccured;
 
-
 void IRAM_ATTR isr()
 {
   bEventOccured = true;
@@ -69,7 +68,7 @@ void setup()
 
   Serial.println("\nAsync Events");
   Serial.println("\nJustin Borzi, 000798465");
-  attachInterrupt(digitalPinToInterrupt(PIN_PIR), isr, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PIN_PIR), isr, RISING);
 }
 
 void setLEDStatus(int status = 0)
