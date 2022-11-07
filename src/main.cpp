@@ -37,6 +37,14 @@ WiFiClient client;
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char *myWriteAPIKey = SECRET_WRITE_APIKEY;
 
+volatile bool bEventOccured;
+
+
+void IRAM_ATTR isr()
+{
+  bEventOccured = true;
+}
+
 void setup()
 {
   Serial.begin(115200); // Initialize serial
@@ -61,6 +69,7 @@ void setup()
 
   Serial.println("\nAsync Events");
   Serial.println("\nJustin Borzi, 000798465");
+  attachInterrupt(digitalPinToInterrupt(PIN_PIR), isr, CHANGE);
 }
 
 void setLEDStatus(int status = 0)
@@ -101,30 +110,10 @@ void setLEDStatus(int status = 0)
 
 void loop()
 {
-  bool bPIR;
-
   // echo PIR input to built-in LED OUTPUT (note: invert the sense of the PIR sensor!)
   digitalWrite(LED_BUILTIN, HIGH);
 
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(SECRET_SSID);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-      WiFi.begin(ssid, pass); // Connect to WPA/WPA2 network. Change this line if using open or WEP network
-      Serial.print(".");
-      setLEDStatus(WARNING_LIGHT);
-      delay(5000);
-    }
-
-    Serial.println("\nConnected.");
-    Serial.printf("Server started, %s\n", WiFi.localIP().toString().c_str());
-    setLEDStatus(SUCCESS_LIGHT);
-  }
-
-  bPIR = digitalRead(PIN_PIR);
-  if (bPIR)
+  if (bEventOccured)
   {
     Serial.println("Input Detected: " + String(digitalRead(PIN_PIR)));
 
@@ -147,5 +136,23 @@ void loop()
       Serial.println("Problem updating channel. HTTP error code " + String(x));
     }
     setLEDStatus();
+    bEventOccured = false;
+  }
+
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(SECRET_SSID);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      WiFi.begin(ssid, pass); // Connect to WPA/WPA2 network. Change this line if using open or WEP network
+      Serial.print(".");
+      setLEDStatus(WARNING_LIGHT);
+      delay(5000);
+    }
+
+    Serial.println("\nConnected.");
+    Serial.printf("Server started, %s\n", WiFi.localIP().toString().c_str());
+    setLEDStatus(SUCCESS_LIGHT);
   }
 }
