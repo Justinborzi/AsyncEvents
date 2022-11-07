@@ -1,8 +1,13 @@
-// ******************************************************************
-// COMP-10184
-// External LED Wiring, PIR Sensor Test Program
+// COMP-10184 - Mohawk College
+// Async Events
 //
-// @author Mohawk College
+// This program is a simple web server that serves files from a file system and tracks the current temperature in realtime of an attached sensor device.
+//
+// @author Justin Borzi
+// @id 000798465
+// @date 2022-11-07
+//
+// I created this work and I have not shared it with anyone else.
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -17,6 +22,7 @@
 // Define Constants
 #define SECOND_DELAY 1000
 
+// Light Pins
 #define SUCCESS_LIGHT 1
 #define WARNING_LIGHT 2
 #define DANGER_LIGHT 3
@@ -26,13 +32,10 @@
 
 char ssid[] = SECRET_SSID; // your network SSID (name)
 char pass[] = SECRET_PASS; // your network password
-int keyIndex = 0;          // your network key Index number (needed only for WEP)
 WiFiClient client;
 
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char *myWriteAPIKey = SECRET_WRITE_APIKEY;
-
-int number = 0;
 
 void setup()
 {
@@ -102,7 +105,7 @@ void loop()
 
   // echo PIR input to built-in LED OUTPUT (note: invert the sense of the PIR sensor!)
   digitalWrite(LED_BUILTIN, HIGH);
-  
+
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.print("Attempting to connect to SSID: ");
