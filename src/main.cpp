@@ -9,6 +9,7 @@
 //
 // I created this work and I have not shared it with anyone else.
 
+// Define Imports
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "secrets.h"
@@ -34,11 +35,16 @@ char ssid[] = SECRET_SSID; // your network SSID (name)
 char pass[] = SECRET_PASS; // your network password
 WiFiClient client;
 
+// Set the API Channel and Key
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char *myWriteAPIKey = SECRET_WRITE_APIKEY;
 
+// Global Event State
 volatile bool bEventOccured;
 
+/**
+ * Handle External Events
+ */
 void IRAM_ATTR isr()
 {
   bEventOccured = true;
@@ -71,6 +77,10 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(PIN_PIR), isr, RISING);
 }
 
+/**
+ * Set the LED based on the passed state.
+ * @param status - 0 = OFF, 1 = SUCCESS, 2 = WARNING, 3 = DANGER 
+ */
 void setLEDStatus(int status = 0)
 {
   switch (status)
@@ -112,20 +122,27 @@ void loop()
   // echo PIR input to built-in LED OUTPUT (note: invert the sense of the PIR sensor!)
   digitalWrite(LED_BUILTIN, HIGH);
 
+  // Handle the EXTERNAL EVENT
   if (bEventOccured)
   {
     Serial.println("Input Detected: " + String(digitalRead(PIN_PIR)));
 
+    // Set up timer.
     int timer = 2;
+
+    // Decrement the seconds.
     while (timer > 0)
     {
       timer--;
       setLEDStatus(DANGER_LIGHT);
       delay(SECOND_DELAY);
     }
+
     // Write to ThingSpeak. There are up to 8 fields in a channel, allowing you to store up to 8 different
     // pieces of information in a channel.  Here, we write to field 1.
     int x = ThingSpeak.writeField(myChannelNumber, 1, 1, myWriteAPIKey);
+
+    // Print success if repsonse code is 200 (OK) otherwise print the error with the returned code.
     if (x == 200)
     {
       Serial.println("Channel update successful.");
@@ -134,24 +151,36 @@ void loop()
     {
       Serial.println("Problem updating channel. HTTP error code " + String(x));
     }
+
+    // Set the LED to off state
     setLEDStatus();
+
+    // Set flag as off.
     bEventOccured = false;
   }
 
+  // Wait for WIFI connection
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(SECRET_SSID);
+
+    // Wifi isnt connected, continue until changed.
     while (WiFi.status() != WL_CONNECTED)
     {
       WiFi.begin(ssid, pass); // Connect to WPA/WPA2 network. Change this line if using open or WEP network
       Serial.print(".");
+      
+      // Keep warning light enabled until successful connection.
       setLEDStatus(WARNING_LIGHT);
       delay(5000);
     }
 
+    // Wifi has successfully connected.
     Serial.println("\nConnected.");
     Serial.printf("Server started, %s\n", WiFi.localIP().toString().c_str());
+
+    // Set state to ready.
     setLEDStatus(SUCCESS_LIGHT);
   }
 }
